@@ -60,5 +60,5 @@
         android:max="400"
         android:progress="0"
         android:background="#888888"
-        android:indeterminate="true" />
+        android:indeterminate="false" />
 </LinearLayout>

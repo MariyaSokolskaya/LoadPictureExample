@@ -3,9 +3,10 @@ package com.example.admin215.loadpictureexample;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Pair;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -38,14 +39,15 @@ public class MainActivity extends AppCompatActivity {
         loadButton = (Button) findViewById(R.id.button1);
         progressBar = (ProgressBar) findViewById(R.id.loading_progress);
         imagesRow = (TableRow) findViewById(R.id.images);
-//        for (int i = 0; i <imageUrls.length ; i++) {
-//            try {
-//                Bitmap image = getImageByUrl(imageUrls[i]);
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
         setUpViews();
+    }
+
+    private void setUpViews(){
+        for (int i = 0; i < imagesRow.getChildCount(); i++) {
+            imageView.add((ImageView) imagesRow.getChildAt(i));
+        }
+    }
+    protected void startLoading(View v){
         if(loader == null || loader.getStatus() == AsyncTask.Status.FINISHED){
             loader = new AsyncImagesLoader();
             loader.execute(imageUrls);
@@ -54,20 +56,46 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this,"Ждите завершения загрузки", Toast.LENGTH_LONG).show();
     }
 
-    private void setUpViews(){
-        for (int i = 0; i < imagesRow.getChildCount(); i++) {
-            imageView.add((ImageView) imagesRow.getChildAt(i));
+    class  AsyncImagesLoader extends AsyncTask<String, Pair<Integer, Bitmap>, Void>{
+        @Override
+        protected Void doInBackground(String... params) {
+            for (int i = 0; i < params.length; i++) {
+                try {
+                    Bitmap image = getImageByUrl(params[i]);
+                    Thread.sleep(400);
+                    Pair pair = new Pair(i, image);
+                    publishProgress(pair);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    //Toast.makeText(getApplicationContext(),"Не могу загрузить картинку №" + Integer.valueOf(i).toString(), Toast.LENGTH_SHORT).show();
+                    e.printStackTrace();
+                }
+            }
+
+            return null;
         }
-    }
-    private Bitmap getImageByUrl(String url) throws MalformedURLException, IOException  {
-        Bitmap image = BitmapFactory.decodeStream((InputStream) new URL(url).getContent());
-        return image;
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            Toast.makeText(getApplicationContext(), "Загрузка завершена", Toast.LENGTH_SHORT).show();
+        }
+
+        @Override
+        protected void onProgressUpdate(Pair<Integer, Bitmap>... values) {
+            int position = values[0].first;
+            int currentPosition = position + 1;
+            progressBar.setProgress(currentPosition*100);
+            Bitmap image = values[0].second;
+            imageView.get(position).setImageBitmap(image);
+            ((ImageView)imagesRow.getChildAt(position)).setImageBitmap(image);
+            super.onProgressUpdate(values);
+        }
+
+        private Bitmap getImageByUrl(String url) throws MalformedURLException, IOException {
+            Bitmap image = BitmapFactory.decodeStream((InputStream) new URL(url).getContent());
+            return image;
+        }
     }
 }
 
-class  AsyncImagesLoader extends AsyncTask<String, Pair<Integer, Bitmap>, Void>{
-    @Override
-    protected Void doInBackground(String... params) {
-        return null;
-    }
-}
